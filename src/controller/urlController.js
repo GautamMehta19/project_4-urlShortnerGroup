@@ -72,7 +72,7 @@ const getUrl = async function (req, res) {
             const urlCode = req.params.urlCode
 
             if (!(shortId.isValid(urlCode))) {
-                  return res.status(404).send({
+                  return res.status(400).send({
                         status: false,
                         message: "invaid url"
                   })
@@ -80,7 +80,7 @@ const getUrl = async function (req, res) {
 
             let checkUrl = await urlModel.findOne({ urlCode: urlCode })
             if (!checkUrl) {
-                  return res.status(400).send({
+                  return res.status(404).send({
                         status: false,
                         message: "data not found"
                   })
