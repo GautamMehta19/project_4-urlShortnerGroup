@@ -3,7 +3,6 @@ const shortId = require("shortid")
 const mongoose = require("mongoose")
 const redis = require("redis");
 const { promisify } = require("util");
-const { profile } = require("console");
 
 
 //Connect to redis
@@ -41,7 +40,7 @@ const createShortUrl = async function (req, res) {
                         message: " Please Provide long Url "
                   })
             }
-
+            //************ validate the longUrl */
             let regLongUrl = /^(http(s)?:\/\/)?(www.)?([a-zA-Z0-9])+([\-\.]{1}[a-zA-Z0-9]+)*\.[a-zA-Z]{2,5}(:[0-9]{1,5})?(\/[^\s]*)?$/
             if (!regLongUrl.test(longUrl)) {
                   return res.status(400).send({
@@ -57,11 +56,8 @@ const createShortUrl = async function (req, res) {
                   })
             }
 
-            const shortCode = shortId.generate()
-            const baseUrl = "http://localhost:3000";
-            const shortUrl = baseUrl + "/" + shortCode;
-
-            const checkLongUrl = await urlModel.findOne({ longUrl: longUrl }).select({ createdAt: 0, updatedAt: 0, __v: 0, _id: 0 })
+            //**************check LongUrl present or not already */
+            const checkLongUrl = await urlModel.findOne({ longUrl }).select({ createdAt: 0, updatedAt: 0, __v: 0, _id: 0 })
             if (checkLongUrl) {
                   return res.status(200).send({
                         status: true,
@@ -70,11 +66,17 @@ const createShortUrl = async function (req, res) {
                   })
             }
 
+            //*************generate the shorten Url */
+            const shortCode = shortId.generate()
+            const baseUrl = "http://localhost:3000";
+            const shortUrl = baseUrl + "/" + shortCode;
+
+            //*************create the shortUrl */
             await urlModel.create({ longUrl: longUrl, shortUrl: shortUrl, urlCode: shortCode })
             const saveData = await urlModel.findOne({ longUrl: longUrl }).select({ createdAt: 0, updatedAt: 0, __v: 0, _id: 0 })
 
+            //*************set the longUrl into the caching memory */
             await SET_ASYNC(`${data}`, JSON.stringify(saveData))
-
             return res.status(201).send({
                   status: true,
                   message: " Successfully Created Shorten Url ",
@@ -96,33 +98,34 @@ const getUrl = async function (req, res) {
       try {
             const urlCode = req.params.urlCode
 
+            //***********check urlCode valid or not */
             if (!(shortId.isValid(urlCode))) {
                   return res.status(400).send({
                         status: false,
                         message: "invaid url"
                   })
             }
-            let cahcedData = await GET_ASYNC(`${urlCode}`)
-            console.log(cahcedData)
-            let group = JSON.parse(cahcedData)
-            // console.log(group)
 
-            if (group) {
-                  return res.status(302).redirect(group.longUrl)
+            //***********get the urlCode from the cache memory */
+            let cachedData = await GET_ASYNC(`${urlCode}`)
+            //***********convert into string format */
+            let stringCach = JSON.parse(cachedData)
+
+            if (stringCach) {
+                  return res.status(302).redirect(stringCach.longUrl)
             }
             else {
-                  let profile = await urlModel.findOne({ urlCode });
-
-                  if (!profile) {
+                  let findUrl = await urlModel.findOne({ urlCode });
+                  if (!findUrl) {
                         return res.status(404).send({
                               status: false,
                               message: "data not found"
                         })
                   }
 
-                  await SET_ASYNC(`${urlCode}`, JSON.stringify(profile))
-                  return res.status(302).redirect(profile.longUrl)
-
+                  //**********set thr urlCode into the cache memory */
+                  await SET_ASYNC(`${urlCode}`, JSON.stringify(findUrl))
+                  return res.status(302).redirect(findUrl.longUrl)
             }
 
       } catch (err) {
