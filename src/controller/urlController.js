@@ -58,7 +58,6 @@ const createShortUrl = async function (req, res) {
 
             //**************check LongUrl present or not already */
             const checkLongUrl = await urlModel.findOne({ longUrl }).select({ createdAt: 0, updatedAt: 0, __v: 0, _id: 0 })
-            console.log(checkLongUrl)
             if (checkLongUrl) {
                   return res.status(200).send({
                         status: true,
@@ -75,7 +74,6 @@ const createShortUrl = async function (req, res) {
             //*************create the shortUrl */
             await urlModel.create({ longUrl: longUrl, shortUrl: shortUrl, urlCode: shortCode })
             const saveData = await urlModel.findOne({ longUrl: longUrl }).select({ createdAt: 0, updatedAt: 0, __v: 0, _id: 0 })
-            console.log(saveData)
 
             //*************set the longUrl into the caching memory */
             await SET_ASYNC(`${data}`, JSON.stringify(saveData))
