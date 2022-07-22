@@ -23,6 +23,7 @@ redisClient.on("connect", async function () {
 
 const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
 const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
+// const SET_EX = promisify(redisClient.SETEX).bind(redisClient)
 
 
 //******************************************* createShortUrl **********************************/
@@ -75,7 +76,8 @@ const createShortUrl = async function (req, res) {
             const saveData = await urlModel.findOne({ longUrl: longUrl }).select({ createdAt: 0, updatedAt: 0, __v: 0, _id: 0 })
 
             //*************set the longUrl into the caching memory */
-            await SET_ASYNC(`${data}`, JSON.stringify(saveData))
+            await SET_ASYNC(`${data}`, JSON.stringify(saveData)) //**********convert into a JSON string */
+            // await SET_EX(`${data}`,20,JSON.stringify(saveData)) 
             return res.status(201).send({
                   status: true,
                   message: " Successfully Created Shorten Url ",
