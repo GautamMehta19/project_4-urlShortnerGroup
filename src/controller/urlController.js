@@ -23,7 +23,7 @@ redisClient.on("connect", async function () {
 
 const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
 const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
-const SET_EX = promisify(redisClient.SETEX).bind(redisClient)
+const SET_EX = promisify(redisClient.SETEX).bind(redisClient);
 
 
 //******************************************* createShortUrl **********************************/
@@ -158,8 +158,8 @@ const getUrl = async function (req, res) {
 
                   console.log("from DB")
                   //**********set the urlCode into the cache memory */
-                  await SET_ASYNC(`${urlCode}`, JSON.stringify(findUrl)) //**********convert into a JSON string */
-                  // await SET_EX(`${urlCode}`,20,JSON.stringify(findUrl))
+                  // await SET_ASYNC(`${urlCode}`, JSON.stringify(findUrl)) //**********convert into a JSON string */
+                  await SET_EX(`${urlCode}`,20,JSON.stringify(findUrl))
                   return res.status(302).redirect(findUrl.longUrl)
             }
 
